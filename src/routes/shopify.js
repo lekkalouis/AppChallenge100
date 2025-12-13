@@ -1,7 +1,7 @@
 import express from "express";
-import fetch from "node-fetch";
 import { config, hasShopifyConfig } from "../config.js";
 import { badRequest, configError, upstreamError } from "../utils/responses.js";
+import { fetchWithTimeout } from "../utils/fetchWithTimeout.js";
 
 const router = express.Router();
 
@@ -30,13 +30,16 @@ router.get("/orders/by-name/:name", async (req, res) => {
       name
     )}`;
 
-    const orderResp = await fetch(orderUrl, {
-      headers: {
-        "X-Shopify-Access-Token": config.shopify.accessToken,
-        "Content-Type": "application/json"
+    const orderResp = await fetchWithTimeout(
+      orderUrl,
+      {
+        headers: {
+          "X-Shopify-Access-Token": config.shopify.accessToken,
+          "Content-Type": "application/json"
+        }
       },
-      timeout: 20000
-    });
+      20000
+    );
 
     if (!orderResp.ok) {
       const body = await orderResp.text();
@@ -58,13 +61,16 @@ router.get("/orders/by-name/:name", async (req, res) => {
     try {
       if (order.customer && order.customer.id) {
         const metaUrl = `${buildApiBase()}/customers/${order.customer.id}/metafields.json`;
-        const metaResp = await fetch(metaUrl, {
-          headers: {
-            "X-Shopify-Access-Token": config.shopify.accessToken,
-            "Content-Type": "application/json"
+        const metaResp = await fetchWithTimeout(
+          metaUrl,
+          {
+            headers: {
+              "X-Shopify-Access-Token": config.shopify.accessToken,
+              "Content-Type": "application/json"
+            }
           },
-          timeout: 15000
-        });
+          15000
+        );
 
         if (metaResp.ok) {
           const metaData = await metaResp.json();
@@ -101,13 +107,16 @@ router.get("/orders/open", async (_req, res) => {
       `&fulfillment_status=unfulfilled,in_progress` +
       `&limit=50&order=created_at+desc`;
 
-    const resp = await fetch(url, {
-      headers: {
-        "X-Shopify-Access-Token": config.shopify.accessToken,
-        "Content-Type": "application/json"
+    const resp = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          "X-Shopify-Access-Token": config.shopify.accessToken,
+          "Content-Type": "application/json"
+        }
       },
-      timeout: 20000
-    });
+      20000
+    );
 
     if (!resp.ok) {
       const body = await resp.text();
@@ -177,14 +186,17 @@ router.get("/customers/search", async (req, res) => {
       q
     )}&limit=10`;
 
-    const resp = await fetch(url, {
-      headers: {
-        "X-Shopify-Access-Token": config.shopify.accessToken,
-        "Content-Type": "application/json",
-        Accept: "application/json"
+    const resp = await fetchWithTimeout(
+      url,
+      {
+        headers: {
+          "X-Shopify-Access-Token": config.shopify.accessToken,
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        }
       },
-      timeout: 20000
-    });
+      20000
+    );
 
     const text = await resp.text();
     let data;
@@ -307,16 +319,19 @@ router.post("/draft-orders", async (req, res) => {
       }
     };
 
-    const upstream = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": config.shopify.accessToken,
-        "Content-Type": "application/json",
-        Accept: "application/json"
+    const upstream = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "X-Shopify-Access-Token": config.shopify.accessToken,
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify(draftPayload)
       },
-      body: JSON.stringify(draftPayload),
-      timeout: 20000
-    });
+      20000
+    );
 
     const text = await upstream.text();
     let data;
@@ -398,15 +413,18 @@ router.post("/fulfill", async (req, res) => {
       }
     };
 
-    const resp = await fetch(url, {
-      method: "POST",
-      headers: {
-        "X-Shopify-Access-Token": config.shopify.accessToken,
-        "Content-Type": "application/json"
+    const resp = await fetchWithTimeout(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "X-Shopify-Access-Token": config.shopify.accessToken,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(fulfillmentPayload)
       },
-      body: JSON.stringify(fulfillmentPayload),
-      timeout: 20000
-    });
+      20000
+    );
 
     const text = await resp.text();
     let data;
