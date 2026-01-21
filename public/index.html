@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shopfloor Process Simulator</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+        background: #f6f7fb;
+        color: #1b1f24;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 32px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 28px;
+      }
+
+      .tagline {
+        color: #4b5563;
+        font-size: 1rem;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
+      }
+
+      .control-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      label {
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+
+      input[type="number"] {
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        font-size: 1rem;
+        width: 100%;
+      }
+
+      button {
+        padding: 10px 16px;
+        border-radius: 999px;
+        border: none;
+        background: #111827;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+        transition: transform 0.15s ease, background 0.15s ease;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        background: #9ca3af;
+      }
+
+      button:hover:not(:disabled) {
+        transform: translateY(-1px);
+        background: #0f172a;
+      }
+
+      .metrics {
+        display: grid;
+        gap: 12px;
+        background: #f1f5f9;
+        padding: 16px;
+        border-radius: 12px;
+        font-size: 0.95rem;
+      }
+
+      .metric-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .timer {
+        font-size: 1.4rem;
+        font-weight: 700;
+      }
+
+      main {
+        margin-top: 28px;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+      }
+
+      .process-card {
+        background: #ffffff;
+        padding: 20px;
+        border-radius: 18px;
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .process-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+
+      .process-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+      }
+
+      .status-pill {
+        padding: 4px 10px;
+        border-radius: 999px;
+        font-size: 0.8rem;
+        background: #e0f2fe;
+        color: #0369a1;
+        font-weight: 600;
+      }
+
+      .status-pill.done {
+        background: #dcfce7;
+        color: #166534;
+      }
+
+      .progress {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+
+      .progress > span {
+        display: block;
+        height: 100%;
+        background: linear-gradient(90deg, #38bdf8, #2563eb);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .action-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .action-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+      }
+
+      .action-item.completed {
+        text-decoration: line-through;
+        color: #94a3b8;
+        background: #f1f5f9;
+      }
+
+      .action-item.active {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 1px #2563eb inset;
+      }
+
+      .action-duration {
+        font-weight: 600;
+      }
+
+      footer {
+        margin-top: 32px;
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Shopfloor Two-Process Simulator</h1>
+      <p class="tagline">
+        Visualize left and right process flow, timed actions, and throughput
+        scaling for parcel handling.
+      </p>
+      <section class="controls">
+        <div class="control-card">
+          <label for="orders">Orders per day</label>
+          <input id="orders" type="number" min="1" value="120" />
+        </div>
+        <div class="control-card">
+          <label for="parcelMinutes">Minutes per parcel</label>
+          <input id="parcelMinutes" type="number" min="1" value="10" />
+        </div>
+        <div class="control-card">
+          <label>Average parcels per order</label>
+          <input id="avgParcels" type="number" min="1" value="2" />
+        </div>
+        <div class="control-card">
+          <label>Simulation control</label>
+          <button id="toggle">Start simulation</button>
+          <button id="reset" disabled>Reset</button>
+        </div>
+        <div class="control-card metrics" aria-live="polite">
+          <div class="metric-row">
+            <span>Total parcels/day</span>
+            <strong id="parcelsTotal">240</strong>
+          </div>
+          <div class="metric-row">
+            <span>Total minutes/day</span>
+            <strong id="minutesTotal">2400</strong>
+          </div>
+          <div class="metric-row">
+            <span>Total hours/day</span>
+            <strong id="hoursTotal">40.0</strong>
+          </div>
+          <div class="metric-row">
+            <span>Split per process</span>
+            <strong id="perProcessHours">20.0 hrs</strong>
+          </div>
+        </div>
+        <div class="control-card">
+          <label>Overall timer</label>
+          <div class="timer" id="globalTimer">00:00</div>
+        </div>
+      </section>
+    </header>
+
+    <main>
+      <section class="process-card" id="leftProcess">
+        <div class="process-header">
+          <div>
+            <div class="process-title">Left Process</div>
+            <p class="tagline">Inbound flow & pick/pack.</p>
+          </div>
+          <span class="status-pill" data-status>Running</span>
+        </div>
+        <div>
+          <strong>Current action:</strong>
+          <div class="timer" data-current>Awaiting start</div>
+        </div>
+        <div class="progress"><span data-progress></span></div>
+        <ul class="action-list" data-actions></ul>
+      </section>
+
+      <section class="process-card" id="rightProcess">
+        <div class="process-header">
+          <div>
+            <div class="process-title">Right Process</div>
+            <p class="tagline">Booking, labeling & dispatch.</p>
+          </div>
+          <span class="status-pill" data-status>Running</span>
+        </div>
+        <div>
+          <strong>Current action:</strong>
+          <div class="timer" data-current>Awaiting start</div>
+        </div>
+        <div class="progress"><span data-progress></span></div>
+        <ul class="action-list" data-actions></ul>
+      </section>
+    </main>
+
+    <footer>
+      Each action advances automatically when the time limit expires, and
+      completed actions are struck through.
+    </footer>
+
+    <script>
+      const processes = [
+        {
+          id: "leftProcess",
+          actions: [
+            { name: "Receive order & print pick list", seconds: 12 },
+            { name: "Pick items from storage", seconds: 18 },
+            { name: "Pack parcels", seconds: 16 },
+            { name: "Seal & weigh parcels", seconds: 12 },
+            { name: "Stage parcels for booking", seconds: 10 }
+          ]
+        },
+        {
+          id: "rightProcess",
+          actions: [
+            { name: "Verify address details", seconds: 14 },
+            { name: "Book courier service", seconds: 16 },
+            { name: "Print & apply labels", seconds: 12 },
+            { name: "Quality check", seconds: 10 },
+            { name: "Load parcels to dispatch bay", seconds: 12 }
+          ]
+        }
+      ];
+
+      const ordersInput = document.getElementById("orders");
+      const parcelMinutesInput = document.getElementById("parcelMinutes");
+      const avgParcelsInput = document.getElementById("avgParcels");
+      const parcelsTotalEl = document.getElementById("parcelsTotal");
+      const minutesTotalEl = document.getElementById("minutesTotal");
+      const hoursTotalEl = document.getElementById("hoursTotal");
+      const perProcessHoursEl = document.getElementById("perProcessHours");
+      const globalTimerEl = document.getElementById("globalTimer");
+      const toggleButton = document.getElementById("toggle");
+      const resetButton = document.getElementById("reset");
+
+      let running = false;
+      let globalSeconds = 0;
+      let intervalId = null;
+
+      const formatClock = (totalSeconds) => {
+        const minutes = Math.floor(totalSeconds / 60)
+          .toString()
+          .padStart(2, "0");
+        const seconds = Math.floor(totalSeconds % 60)
+          .toString()
+          .padStart(2, "0");
+        return `${minutes}:${seconds}`;
+      };
+
+      const updateMetrics = () => {
+        const orders = Number(ordersInput.value) || 0;
+        const parcelsPerOrder = Number(avgParcelsInput.value) || 0;
+        const minutesPerParcel = Number(parcelMinutesInput.value) || 0;
+        const parcelsTotal = orders * parcelsPerOrder;
+        const minutesTotal = parcelsTotal * minutesPerParcel;
+        const hoursTotal = minutesTotal / 60;
+        const perProcessHours = hoursTotal / 2;
+
+        parcelsTotalEl.textContent = parcelsTotal.toLocaleString();
+        minutesTotalEl.textContent = minutesTotal.toLocaleString();
+        hoursTotalEl.textContent = hoursTotal.toFixed(1);
+        perProcessHoursEl.textContent = `${perProcessHours.toFixed(1)} hrs`;
+      };
+
+      const initProcessCards = () => {
+        processes.forEach((process) => {
+          const card = document.getElementById(process.id);
+          const actionList = card.querySelector("[data-actions]");
+          actionList.innerHTML = "";
+          process.actions.forEach((action, index) => {
+            const li = document.createElement("li");
+            li.className = "action-item";
+            li.dataset.index = index;
+            li.innerHTML = `<span>${action.name}</span><span class="action-duration">${action.seconds}s</span>`;
+            actionList.appendChild(li);
+          });
+          process.currentIndex = 0;
+          process.remaining = process.actions[0].seconds;
+          process.done = false;
+          const status = card.querySelector("[data-status]");
+          status.textContent = "Ready";
+          status.classList.remove("done");
+          card.querySelector("[data-current]").textContent = "Awaiting start";
+          card.querySelector("[data-progress]").style.width = "0%";
+        });
+      };
+
+      const updateProcessUI = (process) => {
+        const card = document.getElementById(process.id);
+        const listItems = [...card.querySelectorAll(".action-item")];
+        listItems.forEach((item) => {
+          const idx = Number(item.dataset.index);
+          item.classList.remove("active");
+          item.classList.toggle("completed", idx < process.currentIndex);
+          if (idx === process.currentIndex && !process.done) {
+            item.classList.add("active");
+          }
+        });
+
+        const status = card.querySelector("[data-status]");
+        if (process.done) {
+          status.textContent = "Complete";
+          status.classList.add("done");
+        } else {
+          status.textContent = running ? "Running" : "Paused";
+          status.classList.remove("done");
+        }
+
+        const current = card.querySelector("[data-current]");
+        if (process.done) {
+          current.textContent = "All actions complete";
+        } else {
+          const action = process.actions[process.currentIndex];
+          current.textContent = `${action.name} (${process.remaining}s)`;
+        }
+
+        const progress = card.querySelector("[data-progress]");
+        if (process.done) {
+          progress.style.width = "100%";
+        } else {
+          const action = process.actions[process.currentIndex];
+          const percent =
+            ((action.seconds - process.remaining) / action.seconds) * 100;
+          progress.style.width = `${Math.min(percent, 100).toFixed(0)}%`;
+        }
+      };
+
+      const tick = () => {
+        globalSeconds += 1;
+        globalTimerEl.textContent = formatClock(globalSeconds);
+
+        processes.forEach((process) => {
+          if (process.done) {
+            updateProcessUI(process);
+            return;
+          }
+
+          process.remaining -= 1;
+          if (process.remaining <= 0) {
+            process.currentIndex += 1;
+            if (process.currentIndex >= process.actions.length) {
+              process.done = true;
+            } else {
+              process.remaining = process.actions[process.currentIndex].seconds;
+            }
+          }
+          updateProcessUI(process);
+        });
+
+        if (processes.every((process) => process.done)) {
+          stopSimulation();
+        }
+      };
+
+      const startSimulation = () => {
+        if (running) return;
+        running = true;
+        toggleButton.textContent = "Pause simulation";
+        resetButton.disabled = false;
+        processes.forEach(updateProcessUI);
+        intervalId = setInterval(tick, 1000);
+      };
+
+      const stopSimulation = () => {
+        running = false;
+        toggleButton.textContent = "Start simulation";
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+      };
+
+      const resetSimulation = () => {
+        stopSimulation();
+        globalSeconds = 0;
+        globalTimerEl.textContent = "00:00";
+        initProcessCards();
+      };
+
+      const toggleSimulation = () => {
+        if (!running) {
+          startSimulation();
+        } else {
+          stopSimulation();
+          processes.forEach(updateProcessUI);
+        }
+      };
+
+      [ordersInput, parcelMinutesInput, avgParcelsInput].forEach((input) => {
+        input.addEventListener("input", updateMetrics);
+      });
+
+      toggleButton.addEventListener("click", toggleSimulation);
+      resetButton.addEventListener("click", resetSimulation);
+
+      updateMetrics();
+      initProcessCards();
+    </script>
+  </body>
+</html>
