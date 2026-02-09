@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App 100</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Day-by-day challenge hub</p>
+          <h1>App 100</h1>
+          <p class="subtitle">
+            Launch your daily builds, track your progress, and store ideas you want to revisit.
+          </p>
+        </div>
+        <div class="progress-card">
+          <div class="progress-header">
+            <span>Challenge progress</span>
+            <span id="progress-count">0 / 100</span>
+          </div>
+          <div class="progress-bar" aria-hidden="true">
+            <div id="progress-fill"></div>
+          </div>
+          <label class="progress-input">
+            Days completed
+            <input id="progress-input" type="number" min="0" max="100" value="0" />
+          </label>
+        </div>
+      </header>
+
+      <main class="grid">
+        <section class="card">
+          <h2>Launcher</h2>
+          <p class="muted">
+            Your daily apps live here. Add a name, description, and local file path to keep everything
+            organized.
+          </p>
+          <form id="app-form" class="form-grid">
+            <label>
+              App name
+              <input type="text" name="name" placeholder="Focus Timer" required />
+            </label>
+            <label>
+              Description
+              <textarea name="description" rows="3" placeholder="What does this app do?" required></textarea>
+            </label>
+            <label>
+              File path / URL
+              <input type="text" name="path" placeholder="/apps/focus-timer/index.html" required />
+            </label>
+            <button type="submit">Add app</button>
+          </form>
+
+          <div id="app-list" class="app-list"></div>
+        </section>
+
+        <section class="card">
+          <h2>Idea vault</h2>
+          <p class="muted">Capture ideas quickly. Everything is stored locally in this browser.</p>
+          <form id="idea-form" class="form-grid">
+            <label>
+              New idea
+              <textarea name="idea" rows="3" placeholder="App idea, feature, or note..." required></textarea>
+            </label>
+            <button type="submit">Save idea</button>
+          </form>
+          <ul id="idea-list" class="idea-list"></ul>
+        </section>
+
+        <section class="card span-two">
+          <h2>Built-in mini apps</h2>
+          <p class="muted">
+            Starter tools to prove out the launcher. Replace these with your own builds anytime.
+          </p>
+          <div class="mini-apps">
+            <article class="mini-app">
+              <header>
+                <h3>Quick Calculator</h3>
+                <p class="muted">Add, subtract, multiply, and divide.</p>
+              </header>
+              <form id="calc-form" class="mini-form">
+                <input type="number" name="a" placeholder="Value A" step="any" required />
+                <select name="op" aria-label="operation">
+                  <option value="+">+</option>
+                  <option value="-">-</option>
+                  <option value="*">×</option>
+                  <option value="/">÷</option>
+                </select>
+                <input type="number" name="b" placeholder="Value B" step="any" required />
+                <button type="submit">Calculate</button>
+              </form>
+              <p id="calc-result" class="result">Result: --</p>
+            </article>
+
+            <article class="mini-app">
+              <header>
+                <h3>Pomodoro</h3>
+                <p class="muted">Run a 25-minute focus sprint.</p>
+              </header>
+              <div class="timer">
+                <p id="timer-display" class="timer-display">25:00</p>
+                <div class="timer-actions">
+                  <button id="timer-start">Start</button>
+                  <button id="timer-pause">Pause</button>
+                  <button id="timer-reset">Reset</button>
+                </div>
+              </div>
+            </article>
+
+            <article class="mini-app">
+              <header>
+                <h3>Quick Converter</h3>
+                <p class="muted">Inches to centimeters.</p>
+              </header>
+              <form id="convert-form" class="mini-form">
+                <input type="number" name="inches" placeholder="Inches" step="any" required />
+                <button type="submit">Convert</button>
+              </form>
+              <p id="convert-result" class="result">Centimeters: --</p>
+            </article>
+
+            <article class="mini-app">
+              <header>
+                <h3>Daily Check</h3>
+                <p class="muted">One-line reflection for the day.</p>
+              </header>
+              <form id="checkin-form" class="mini-form">
+                <input type="text" name="checkin" placeholder="Today's win..." required />
+                <button type="submit">Save</button>
+              </form>
+              <p id="checkin-result" class="result">Latest: --</p>
+            </article>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
