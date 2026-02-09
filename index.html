@@ -31,8 +31,14 @@
         </div>
       </header>
 
+      <nav class="nav">
+        <a href="#/launcher" data-route-link="launcher">Launcher</a>
+        <a href="#/ideas" data-route-link="ideas">Idea vault</a>
+        <a href="#/mini-apps" data-route-link="mini-apps">Mini apps</a>
+      </nav>
+
       <main class="grid">
-        <section class="card">
+        <section class="card route-view" data-route="launcher">
           <h2>Launcher</h2>
           <p class="muted">
             Your daily apps live here. Add a name, description, and local file path to keep everything
@@ -57,7 +63,7 @@
           <div id="app-list" class="app-list"></div>
         </section>
 
-        <section class="card">
+        <section class="card route-view" data-route="ideas">
           <h2>Idea vault</h2>
           <p class="muted">Capture ideas quickly. Everything is stored locally in this browser.</p>
           <form id="idea-form" class="form-grid">
@@ -70,7 +76,7 @@
           <ul id="idea-list" class="idea-list"></ul>
         </section>
 
-        <section class="card span-two">
+        <section class="card span-two route-view" data-route="mini-apps">
           <h2>Built-in mini apps</h2>
           <p class="muted">
             Starter tools to prove out the launcher. Replace these with your own builds anytime.
@@ -133,6 +139,21 @@
               </form>
               <p id="checkin-result" class="result">Latest: --</p>
             </article>
+          </div>
+        </section>
+
+        <section class="card span-two route-view" data-route="app-detail" hidden>
+          <div class="detail-header">
+            <div>
+              <p class="eyebrow">App detail</p>
+              <h2 id="detail-title">App</h2>
+            </div>
+            <button id="detail-back" type="button" class="ghost-button">Back to launcher</button>
+          </div>
+          <p id="detail-description" class="muted"></p>
+          <div class="detail-meta">
+            <span>Path / URL</span>
+            <a id="detail-path" href="#" target="_blank" rel="noreferrer"></a>
           </div>
         </section>
       </main>

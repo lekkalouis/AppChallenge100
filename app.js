@@ -4,6 +4,8 @@ const progressCount = document.getElementById("progress-count");
 
 const appForm = document.getElementById("app-form");
 const appList = document.getElementById("app-list");
+const routeViews = document.querySelectorAll("[data-route]");
+const routeLinks = document.querySelectorAll("[data-route-link]");
 
 const ideaForm = document.getElementById("idea-form");
 const ideaList = document.getElementById("idea-list");
@@ -22,11 +24,20 @@ const timerStart = document.getElementById("timer-start");
 const timerPause = document.getElementById("timer-pause");
 const timerReset = document.getElementById("timer-reset");
 
+const detailTitle = document.getElementById("detail-title");
+const detailDescription = document.getElementById("detail-description");
+const detailPath = document.getElementById("detail-path");
+const detailBack = document.getElementById("detail-back");
+
 const STORAGE_KEYS = {
   apps: "app100.apps",
   ideas: "app100.ideas",
   progress: "app100.progress",
   checkin: "app100.checkin",
+};
+
+let state = {
+  apps: [],
 };
 
 const defaultApps = [
@@ -66,6 +77,12 @@ const getStored = (key, fallback) => {
 
 const setStored = (key, value) => {
   localStorage.setItem(key, JSON.stringify(value));
+};
+
+const saveApps = (next) => {
+  setStored(STORAGE_KEYS.apps, next);
+  renderApps(next);
+  state.apps = next;
 };
 
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
@@ -120,7 +137,34 @@ const renderApps = (apps) => {
     meta.className = "app-meta";
     meta.textContent = `Path: ${app.path}`;
 
-    details.append(title, desc, meta);
+    const actions = document.createElement("div");
+    actions.className = "app-actions";
+
+    const viewButton = document.createElement("button");
+    viewButton.type = "button";
+    viewButton.textContent = "View details";
+    viewButton.addEventListener("click", () => {
+      location.hash = `#/apps/${app.id}`;
+    });
+
+    const openLink = document.createElement("a");
+    openLink.href = app.path;
+    openLink.target = "_blank";
+    openLink.rel = "noreferrer";
+    openLink.textContent = "Open";
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "ghost-button";
+    removeButton.textContent = "Remove";
+    removeButton.addEventListener("click", () => {
+      const next = apps.filter((item) => item.id !== app.id);
+      saveApps(next);
+    });
+
+    actions.append(viewButton, openLink, removeButton);
+
+    details.append(title, desc, meta, actions);
     item.append(icon, details);
     appList.append(item);
   });
@@ -150,7 +194,10 @@ const renderIdeas = (ideas) => {
 };
 
 const loadState = () => {
-  const apps = getStored(STORAGE_KEYS.apps, defaultApps);
+  const apps = getStored(STORAGE_KEYS.apps, defaultApps).map((app, index) => ({
+    id: app.id ?? `${app.name}-${index}`,
+    ...app,
+  }));
   const ideas = getStored(STORAGE_KEYS.ideas, []);
   const progress = getStored(STORAGE_KEYS.progress, 0);
   const checkin = getStored(STORAGE_KEYS.checkin, "--");
@@ -159,6 +206,10 @@ const loadState = () => {
   renderIdeas(ideas);
   renderProgress(progress);
   checkinResult.textContent = `Latest: ${checkin}`;
+
+  setStored(STORAGE_KEYS.apps, apps);
+
+  return { apps };
 };
 
 progressInput.addEventListener("input", (event) => {
@@ -170,14 +221,17 @@ appForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const formData = new FormData(appForm);
   const app = {
+    id: `${Date.now()}`,
     name: formData.get("name").trim(),
     description: formData.get("description").trim(),
     path: formData.get("path").trim(),
   };
-  const apps = getStored(STORAGE_KEYS.apps, defaultApps);
+  const apps = getStored(STORAGE_KEYS.apps, defaultApps).map((item, index) => ({
+    id: item.id ?? `${item.name}-${index}`,
+    ...item,
+  }));
   const next = [app, ...apps];
-  setStored(STORAGE_KEYS.apps, next);
-  renderApps(next);
+  saveApps(next);
   appForm.reset();
 });
 
@@ -233,6 +287,51 @@ checkinForm.addEventListener("submit", (event) => {
 let timerSeconds = 25 * 60;
 let timerInterval = null;
 
+const getRouteFromHash = () => {
+  const hash = location.hash.replace("#", "");
+  if (!hash || hash === "/") {
+    return { name: "launcher" };
+  }
+
+  const parts = hash.split("/").filter(Boolean);
+  if (parts[0] === "apps" && parts[1]) {
+    return { name: "app-detail", id: parts[1] };
+  }
+
+  const validRoutes = new Set(["launcher", "ideas", "mini-apps"]);
+  if (validRoutes.has(parts[0])) {
+    return { name: parts[0] };
+  }
+
+  return { name: "launcher" };
+};
+
+const setActiveRoute = (routeName) => {
+  routeViews.forEach((view) => {
+    view.hidden = view.dataset.route !== routeName;
+  });
+  routeLinks.forEach((link) => {
+    link.classList.toggle("active", link.dataset.routeLink === routeName);
+  });
+};
+
+const renderAppDetail = (apps, id) => {
+  const app = apps.find((item) => item.id === id);
+  if (!app) {
+    detailTitle.textContent = "App not found";
+    detailDescription.textContent =
+      "We couldn't find that app. Head back to the launcher to pick another one.";
+    detailPath.textContent = "Back to launcher";
+    detailPath.href = "#/launcher";
+    return;
+  }
+
+  detailTitle.textContent = app.name;
+  detailDescription.textContent = app.description;
+  detailPath.textContent = app.path;
+  detailPath.href = app.path;
+};
+
 const renderTimer = () => {
   const minutes = Math.floor(timerSeconds / 60);
   const seconds = timerSeconds % 60;
@@ -269,5 +368,20 @@ timerStart.addEventListener("click", startTimer);
 timerPause.addEventListener("click", pauseTimer);
 timerReset.addEventListener("click", resetTimer);
 
-loadState();
+state = loadState();
 renderTimer();
+
+const handleRouteChange = () => {
+  const route = getRouteFromHash();
+  if (route.name === "app-detail") {
+    renderAppDetail(state.apps, route.id);
+  }
+  setActiveRoute(route.name);
+};
+
+detailBack.addEventListener("click", () => {
+  location.hash = "#/launcher";
+});
+
+window.addEventListener("hashchange", handleRouteChange);
+handleRouteChange();

@@ -34,6 +34,28 @@ body {
   justify-content: space-between;
 }
 
+.nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.nav a {
+  text-decoration: none;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+}
+
+.nav a.active {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: rgba(76, 111, 255, 0.2);
+}
+
 .eyebrow {
   text-transform: uppercase;
   letter-spacing: 0.18em;
@@ -123,6 +145,12 @@ button:hover {
   filter: brightness(0.95);
 }
 
+.ghost-button {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid rgba(76, 111, 255, 0.3);
+}
+
 .grid {
   display: grid;
   gap: 24px;
@@ -181,6 +209,27 @@ button:hover {
 
 .app-details {
   flex: 1;
+}
+
+.app-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.app-actions a,
+.app-actions button {
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+}
+
+.app-actions a {
+  background: var(--accent-soft);
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
 }
 
 .app-meta {
@@ -255,6 +304,31 @@ button:hover {
   display: flex;
   gap: 8px;
   justify-content: center;
+}
+
+.route-view[hidden] {
+  display: none;
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.detail-meta {
+  margin-top: 16px;
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.detail-meta a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
 }
 
 .span-two {
