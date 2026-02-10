@@ -8,47 +8,48 @@
   </head>
   <body>
     <div class="shell">
-      <header class="hero card">
+      <header class="hero card compact">
         <p class="eyebrow">App #2 · /apps/Docbuilder</p>
         <h1>Business Atlas Builder</h1>
-        <p class="muted">Build and manage business documents, SOPs, and reusable templates in one place.</p>
+        <p class="muted">Build business docs, SOPs, and reusable templates with mobile-first editing + print-ready output.</p>
         <div class="stats">
-          <div><span id="doc-count">0</span><small>Documents</small></div>
+          <div><span id="doc-count">0</span><small>Docs</small></div>
           <div><span id="template-count">0</span><small>Templates</small></div>
-          <div><span id="completed-count">0</span><small>Completed</small></div>
+          <div><span id="completed-count">0</span><small>Done</small></div>
         </div>
       </header>
 
-      <main class="layout">
-        <section class="card">
+      <main class="layout compact">
+        <section class="card compact">
           <h2>Create document</h2>
-          <form id="new-doc-form" class="stack">
-            <label>Document name<input name="name" type="text" placeholder="Q2 Business Atlas" required /></label>
+          <form id="new-doc-form" class="stack compact">
+            <label>Document name<input name="name" type="text" placeholder="Q2 Operating Atlas" required /></label>
             <label>Template<select name="template" id="template-select"></select></label>
-            <button type="submit">Create document</button>
+            <button type="submit">Create</button>
           </form>
 
-          <h3>Saved documents</h3>
+          <h3>Saved docs</h3>
           <ul id="doc-list" class="list"></ul>
         </section>
 
-        <section class="card">
+        <section class="card compact">
           <h2 id="editor-title">Select a document</h2>
-          <textarea id="editor" rows="20" placeholder="Choose or create a document to edit..."></textarea>
+          <textarea id="editor" rows="16" placeholder="Choose or create a document to edit..."></textarea>
           <div class="row">
             <button id="save-doc">Save</button>
             <button id="download-doc" class="ghost">Download .md</button>
             <button id="toggle-complete" class="ghost">Mark complete</button>
+            <button id="print-doc" class="ghost">Print formatted</button>
           </div>
           <p id="status" class="muted">No document selected.</p>
         </section>
 
-        <section class="card span-two">
+        <section class="card span-two compact">
           <h2>Template builder</h2>
-          <form id="new-template-form" class="stack">
-            <label>Template name<input name="name" type="text" placeholder="Weekly Ops Review" required /></label>
-            <label>Sections (comma separated)<input name="sections" type="text" placeholder="Purpose, KPIs, Blockers, Decisions" required /></label>
-            <button type="submit">Create template</button>
+          <form id="new-template-form" class="stack compact">
+            <label>Template name<input name="name" type="text" placeholder="Weekly Leadership Review" required /></label>
+            <label>Sections (comma separated)<input name="sections" type="text" placeholder="Purpose, KPIs, Risks, Decisions" required /></label>
+            <button type="submit">Add template</button>
           </form>
           <ul id="template-list" class="list"></ul>
         </section>

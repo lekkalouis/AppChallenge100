@@ -14,6 +14,7 @@ const newTemplateForm = document.getElementById('new-template-form');
 const saveDocBtn = document.getElementById('save-doc');
 const downloadDocBtn = document.getElementById('download-doc');
 const toggleCompleteBtn = document.getElementById('toggle-complete');
+const printDocBtn = document.getElementById('print-doc');
 
 const STORAGE_KEY = 'app2.businessAtlas';
 
@@ -21,7 +22,22 @@ const defaultTemplates = {
   'Business Atlas': ['Mission', 'Core Offer', 'Target Customer', 'Operating Model', 'KPIs', 'Current Risks', 'Next 90 Days'],
   'SOP Builder': ['SOP Name', 'Scope', 'Owner', 'Tools Needed', 'Step-by-step Procedure', 'Failure Modes', 'Escalation Rules'],
   'Pricing Strategy': ['Pricing Objective', 'Current Tiers', 'Guardrails', 'Discount Rules', 'Review Cadence'],
+  'Meeting Brief': ['Context', 'Agenda', 'Metrics Snapshot', 'Decision Needed', 'Owner Assignments'],
+  'Quarterly Plan': ['Quarter Theme', 'Top Objectives', 'Key Projects', 'Resourcing', 'Risk Register', 'Milestones'],
+  'Hiring Scorecard': ['Role Outcome', 'Must-have Skills', 'Interview Stages', 'Assessment Rubric', 'Decision Rules'],
+  'Incident Postmortem': ['Incident Summary', 'Impact', 'Timeline', 'Root Cause', 'Fixes Applied', 'Prevention Actions'],
+  'Go-to-Market': ['Offer', 'ICP', 'Positioning', 'Channels', 'Launch Sequence', 'Revenue Targets'],
+  'Customer Success Playbook': ['Lifecycle Stages', 'Health Signals', 'Interventions', 'Escalation Paths', 'QBR Format'],
+  'Vendor Evaluation': ['Need Statement', 'Criteria', 'Cost Model', 'Risk Review', 'Decision'],
 };
+
+const escapeHtml = (text) =>
+  text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 
 const generateMarkdown = (title, sections) => {
   const lines = [`# ${title}`, ''];
@@ -29,6 +45,62 @@ const generateMarkdown = (title, sections) => {
     lines.push(`## ${section}`, '- ', '');
   });
   return lines.join('\n');
+};
+
+const markdownToHtml = (markdown) => {
+  const lines = markdown.split('\n');
+  const html = [];
+  let inList = false;
+
+  lines.forEach((line) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      return;
+    }
+
+    if (trimmed.startsWith('# ')) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      html.push(`<h1>${escapeHtml(trimmed.slice(2))}</h1>`);
+      return;
+    }
+
+    if (trimmed.startsWith('## ')) {
+      if (inList) {
+        html.push('</ul>');
+        inList = false;
+      }
+      html.push(`<h2>${escapeHtml(trimmed.slice(3))}</h2>`);
+      return;
+    }
+
+    if (trimmed.startsWith('- ')) {
+      if (!inList) {
+        html.push('<ul>');
+        inList = true;
+      }
+      html.push(`<li>${escapeHtml(trimmed.slice(2))}</li>`);
+      return;
+    }
+
+    if (inList) {
+      html.push('</ul>');
+      inList = false;
+    }
+    html.push(`<p>${escapeHtml(trimmed)}</p>`);
+  });
+
+  if (inList) {
+    html.push('</ul>');
+  }
+
+  return html.join('');
 };
 
 const initialState = {
@@ -100,6 +172,14 @@ const openDoc = (id) => {
   renderDocs();
 };
 
+const clearEditor = () => {
+  activeDocId = null;
+  editorTitle.textContent = 'Select a document';
+  editor.value = '';
+  statusText.textContent = 'No document selected.';
+  toggleCompleteBtn.textContent = 'Mark complete';
+};
+
 const renderDocs = () => {
   docList.innerHTML = '';
 
@@ -109,6 +189,8 @@ const renderDocs = () => {
     left.innerHTML = `<strong>${doc.name}</strong><div class="doc-meta">${doc.templateName} · ${doc.completed ? 'Completed' : 'In progress'}</div>`;
 
     const row = document.createElement('div');
+    row.className = 'row';
+
     const open = document.createElement('button');
     open.type = 'button';
     open.className = activeDocId === doc.id ? '' : 'ghost';
@@ -122,9 +204,7 @@ const renderDocs = () => {
     remove.addEventListener('click', () => {
       state.docs = state.docs.filter((d) => d.id !== doc.id);
       if (activeDocId === doc.id) {
-        activeDocId = null;
-        editorTitle.textContent = 'Select a document';
-        editor.value = '';
+        clearEditor();
       }
       setState();
       render();
@@ -215,6 +295,58 @@ toggleCompleteBtn.addEventListener('click', () => {
   setState();
   render();
   openDoc(doc.id);
+});
+
+printDocBtn.addEventListener('click', () => {
+  const doc = state.docs.find((d) => d.id === activeDocId);
+  if (!doc) {
+    statusText.textContent = 'Select a document first.';
+    return;
+  }
+
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    statusText.textContent = 'Pop-up blocked. Enable pop-ups to print.';
+    return;
+  }
+
+  const now = new Date().toLocaleString();
+  const htmlBody = markdownToHtml(editor.value);
+
+  printWindow.document.write(`<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>${escapeHtml(doc.name)} - Print</title>
+    <style>
+      @page { size: A4; margin: 18mm 14mm 20mm; }
+      body { font-family: 'Inter', Arial, sans-serif; color: #1f2433; line-height: 1.45; margin: 0; }
+      .wrap { counter-reset: page; }
+      header { border-bottom: 2px solid #dce3f8; padding-bottom: 8px; margin-bottom: 14px; }
+      h1 { margin: 0; font-size: 24px; }
+      .meta { color: #5f6b82; font-size: 12px; margin-top: 4px; }
+      h2 { font-size: 16px; margin-top: 18px; margin-bottom: 8px; color: #243a78; page-break-after: avoid; }
+      p, li { font-size: 12px; }
+      ul { margin: 0 0 10px 20px; }
+      footer { position: fixed; bottom: 0; left: 0; right: 0; text-align: right; font-size: 11px; color: #64708a; }
+      footer::after { content: 'Page ' counter(page); }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>${escapeHtml(doc.name)}</h1>
+        <div class="meta">Template: ${escapeHtml(doc.templateName)} · Generated: ${escapeHtml(now)}</div>
+      </header>
+      <main>${htmlBody}</main>
+      <footer></footer>
+    </div>
+  </body>
+</html>`);
+
+  printWindow.document.close();
+  printWindow.focus();
+  printWindow.print();
 });
 
 const render = () => {
