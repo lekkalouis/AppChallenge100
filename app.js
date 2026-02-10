@@ -42,6 +42,11 @@ let state = {
 
 const defaultApps = [
   {
+    name: "Business Atlas Builder",
+    description: "App #2: create business docs and reusable templates.",
+    path: "/apps/Docbuilder/index.html",
+  },
+  {
     name: "Momentum Pad",
     description: "Landing page to keep your daily momentum notes.",
     path: "/apps/momentum-pad/index.html",
