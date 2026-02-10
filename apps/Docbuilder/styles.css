@@ -1,0 +1,48 @@
+:root {
+  --bg: #f5f7fd;
+  --card: #fff;
+  --text: #1b2233;
+  --muted: #61708b;
+  --accent: #2f67ff;
+  --border: #d9e1f3;
+  font-family: Inter, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+.shell { max-width: 1100px; margin: 0 auto; padding: 14px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 12px; }
+.compact h1, .compact h2, .compact h3 { margin: 0 0 8px; }
+.eyebrow { color: var(--accent); font-size: 11px; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; margin: 0 0 4px; }
+.muted { color: var(--muted); margin: 0; font-size: 13px; }
+.stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 6px; margin-top: 8px; }
+.stats div { border: 1px solid var(--border); border-radius: 8px; padding: 8px; }
+.stats span { font-size: 18px; font-weight: 800; display: block; }
+.stats small { font-size: 11px; color: var(--muted); }
+.layout { margin-top: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.span-two { grid-column: span 2; }
+.stack { display: grid; gap: 8px; }
+label { display: grid; gap: 4px; font-weight: 600; font-size: 13px; }
+input, select, textarea, button { font: inherit; }
+input, select, textarea { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px; }
+textarea { min-height: 240px; }
+button { border: none; background: var(--accent); color: #fff; padding: 8px 10px; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; }
+button.ghost { background: #eaf0ff; color: #1f3e83; }
+.list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.list li { border: 1px solid var(--border); border-radius: 8px; padding: 8px; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.row { margin-top: 8px; display: flex; flex-wrap: wrap; gap: 6px; }
+.doc-meta { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+@media (max-width: 980px) {
+  .layout { grid-template-columns: 1fr; }
+  .span-two { grid-column: span 1; }
+}
+
+@media (max-width: 640px) {
+  .shell { padding: 8px; }
+  .card { padding: 10px; border-radius: 12px; }
+  .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .list li { flex-direction: column; }
+  .row { width: 100%; }
+  .row button { flex: 1 1 calc(50% - 6px); }
+  textarea { min-height: 180px; }
+}
