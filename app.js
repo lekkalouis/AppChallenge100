@@ -57,6 +57,11 @@ const defaultApps = [
     path: "/apps/mini-finance/index.html",
   },
   {
+    name: "Focus Compass (App #3)",
+    description: "Prioritize tasks by impact, effort, and your current energy.",
+    path: "/apps/app-003-focus-compass/index.html",
+  },
+  {
     name: "Color Lab",
     description: "Palette generator and contrast checker.",
     path: "/apps/color-lab/index.html",
