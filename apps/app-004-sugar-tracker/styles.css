@@ -227,3 +227,12 @@ button.ghost {
     grid-template-columns: 1fr;
   }
 }
+
+#mode-caption {
+  margin-top: 0.45rem;
+}
+
+#pregnancy-week:disabled {
+  background: #f7f3ff;
+  color: #8c86a2;
+}

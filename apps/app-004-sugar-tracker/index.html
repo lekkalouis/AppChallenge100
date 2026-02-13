@@ -18,6 +18,39 @@
       </header>
 
       <section class="card">
+        <div class="section-header">
+          <h2>Monitoring mode</h2>
+          <button id="toggle-mode" type="button" class="ghost">Switch to pregnant mode</button>
+        </div>
+        <p class="muted" id="mode-caption">Using non-pregnant glucose standards.</p>
+        <form id="profile-form" class="form-grid">
+          <div class="grid-two">
+            <label>
+              Pregnancy week
+              <input id="pregnancy-week" type="number" min="4" max="42" step="1" placeholder="Required in pregnant mode" />
+            </label>
+            <label>
+              Hyperthyroidism
+              <select name="hyperthyroidism" required>
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+            <label>
+              Insulin resistance
+              <select name="insulinResistance" required>
+                <option value="">Select</option>
+                <option value="yes">Yes</option>
+                <option value="no">No</option>
+              </select>
+            </label>
+          </div>
+          <button type="submit">Save profile</button>
+        </form>
+      </section>
+
+      <section class="card">
         <h2>Add glucose reading</h2>
         <form id="entry-form" class="form-grid">
           <div class="grid-two">
@@ -41,6 +74,24 @@
                 <option value="breakfast">Breakfast</option>
                 <option value="lunch">Lunch</option>
                 <option value="dinner">Dinner</option>
+              </select>
+            </label>
+            <label>
+              Carbohydrates around reading (g)
+              <input type="number" name="carbsGrams" min="0" max="250" step="1" required placeholder="e.g. 35" />
+            </label>
+            <label>
+              Activity in prior 2h (minutes)
+              <input type="number" name="activityMinutes" min="0" max="240" step="1" required placeholder="e.g. 20" />
+            </label>
+            <label>
+              Thyroid symptom intensity
+              <select name="thyroidSymptoms" required>
+                <option value="">Select</option>
+                <option value="none">None</option>
+                <option value="mild">Mild</option>
+                <option value="moderate">Moderate</option>
+                <option value="severe">Severe</option>
               </select>
             </label>
           </div>
