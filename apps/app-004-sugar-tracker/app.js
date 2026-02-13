@@ -6,7 +6,6 @@ const entryList = document.getElementById("entry-list");
 const clearAllButton = document.getElementById("clear-all");
 
 const STORAGE_KEY = "app100.sugar-tracker.entries";
-const slots = ["fasting", "breakfast", "lunch", "dinner"];
 
 const riskColor = {
   inRange: "var(--good)",
@@ -24,6 +23,13 @@ const classifyReading = (value) => {
   return "inRange";
 };
 
+const safeDate = (input) => {
+  const parsed = new Date(input);
+  return Number.isNaN(parsed.getTime()) ? 0 : parsed.getTime();
+};
+
+const safeDateTime = (entry) => safeDate(`${entry.date}T${entry.time || "00:00"}`);
+
 const getEntries = () => {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -31,7 +37,21 @@ const getEntries = () => {
       return [];
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+
+    return parsed
+      .map((entry) => {
+        const level = Number(entry.level);
+        return {
+          id: typeof entry.id === "string" ? entry.id : crypto.randomUUID(),
+          date: typeof entry.date === "string" ? entry.date : "",
+          time: typeof entry.time === "string" && entry.time ? entry.time : "00:00",
+          level: Number.isFinite(level) ? level : null,
+        };
+      })
+      .filter((entry) => entry.date && entry.level !== null);
   } catch (error) {
     return [];
   }
@@ -41,8 +61,7 @@ const setEntries = (entries) => {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
 };
 
-const gatherValues = (entries) =>
-  entries.flatMap((entry) => slots.map((slot) => entry[slot]).filter((value) => typeof value === "number"));
+const gatherValues = (entries) => entries.map((entry) => entry.level).filter((value) => typeof value === "number");
 
 const average = (values) => {
   if (!values.length) {
@@ -91,13 +110,18 @@ const renderStats = (entries) => {
   const avg = average(values);
   const risk = getRiskSummary(values);
   const dominantRisk = overallRisk(risk);
+  const uniqueDays = new Set(entries.map((entry) => entry.date));
 
   const avgText = avg === null ? "--" : avg.toFixed(1);
 
   statsContainer.innerHTML = `
     <div class="stat">
-      <small>Logged days</small>
+      <small>Logged entries</small>
       <strong>${entries.length}</strong>
+    </div>
+    <div class="stat">
+      <small>Days tracked</small>
+      <strong>${uniqueDays.size}</strong>
     </div>
     <div class="stat">
       <small>Average glucose</small>
@@ -136,37 +160,32 @@ const renderRiskBars = (entries) => {
   });
 };
 
-const toDayAverage = (entry) => {
-  const values = slots.map((slot) => entry[slot]).filter((value) => typeof value === "number");
-  return average(values);
-};
-
 const renderTrendChart = (entries) => {
-  const byDate = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date)).slice(-7);
-  const points = byDate
+  const byDate = [...entries]
+    .sort((a, b) => safeDateTime(a) - safeDateTime(b))
+    .slice(-7)
     .map((entry) => ({
-      label: entry.date,
-      value: toDayAverage(entry),
-    }))
-    .filter((entry) => entry.value !== null);
+      label: `${entry.date} ${entry.time}`,
+      value: entry.level,
+    }));
 
-  if (!points.length) {
+  if (!byDate.length) {
     trendChart.innerHTML = '<text x="24" y="36" fill="#647089">Add entries to view your trend.</text>';
     return;
   }
 
-  const min = Math.min(...points.map((p) => p.value), 3);
-  const max = Math.max(...points.map((p) => p.value), 10);
+  const min = Math.min(...byDate.map((p) => p.value), 3);
+  const max = Math.max(...byDate.map((p) => p.value), 10);
   const width = 640;
   const height = 260;
   const padX = 40;
   const padY = 28;
 
   const scaleX = (index) => {
-    if (points.length === 1) {
+    if (byDate.length === 1) {
       return width / 2;
     }
-    return padX + (index / (points.length - 1)) * (width - padX * 2);
+    return padX + (index / (byDate.length - 1)) * (width - padX * 2);
   };
 
   const scaleY = (value) => {
@@ -174,18 +193,18 @@ const renderTrendChart = (entries) => {
     return height - padY - ratio * (height - padY * 2);
   };
 
-  const path = points
+  const path = byDate
     .map((point, index) => `${index === 0 ? "M" : "L"}${scaleX(index)},${scaleY(point.value)}`)
     .join(" ");
 
-  const circles = points
+  const circles = byDate
     .map(
       (point, index) =>
         `<circle cx="${scaleX(index)}" cy="${scaleY(point.value)}" r="4" fill="#8a74f0"><title>${point.label}: ${point.value.toFixed(1)}</title></circle>`,
     )
     .join("");
 
-  const labels = points
+  const labels = byDate
     .map((point, index) => {
       const short = point.label.slice(5);
       return `<text x="${scaleX(index)}" y="246" text-anchor="middle" fill="#647089" font-size="10">${short}</text>`;
@@ -200,21 +219,16 @@ const renderTrendChart = (entries) => {
   `;
 };
 
-const readingText = (entry) =>
-  slots
-    .map((slot) => `${slot[0].toUpperCase()}${slot.slice(1)}: ${typeof entry[slot] === "number" ? entry[slot].toFixed(1) : "-"}`)
-    .join(" · ");
-
 const renderEntryList = (entries) => {
   entryList.innerHTML = "";
 
-  const sorted = [...entries].sort((a, b) => new Date(b.date) - new Date(a.date));
+  const sorted = [...entries].sort((a, b) => safeDateTime(b) - safeDateTime(a));
   sorted.forEach((entry) => {
     const item = document.createElement("li");
     item.className = "entry-item";
     item.innerHTML = `
-      <strong>${entry.date}</strong>
-      <span>${readingText(entry)}</span>
+      <strong>${entry.date} · ${entry.time}</strong>
+      <span>Level: ${entry.level.toFixed(1)} mmol/L</span>
     `;
     entryList.append(item);
   });
@@ -231,28 +245,31 @@ form.addEventListener("submit", (event) => {
   event.preventDefault();
   const data = new FormData(form);
 
+  const rawLevel = data.get("level");
+  const parsedLevel = Number(rawLevel);
   const entry = {
     id: crypto.randomUUID(),
     date: data.get("date"),
+    time: data.get("time"),
+    level: Number.isFinite(parsedLevel) && rawLevel !== "" ? parsedLevel : null,
   };
 
-  slots.forEach((slot) => {
-    const raw = data.get(slot);
-    const parsed = Number(raw);
-    entry[slot] = Number.isFinite(parsed) && raw !== "" ? parsed : null;
-  });
-
-  if (!entry.date) {
+  if (!entry.date || !entry.time || entry.level === null) {
     return;
   }
 
   const entries = getEntries();
-  const withoutSameDate = entries.filter((item) => item.date !== entry.date);
-  const next = [...withoutSameDate, entry];
+  const next = [...entries, entry];
   setEntries(next);
   renderAll(next);
+
+  const currentDate = entry.date;
   form.reset();
-  form.date.valueAsDate = new Date();
+  form.date.value = currentDate;
+  const now = new Date();
+  const hh = `${now.getHours()}`.padStart(2, "0");
+  const mm = `${now.getMinutes()}`.padStart(2, "0");
+  form.time.value = `${hh}:${mm}`;
 });
 
 clearAllButton.addEventListener("click", () => {
@@ -260,5 +277,11 @@ clearAllButton.addEventListener("click", () => {
   renderAll([]);
 });
 
-form.date.valueAsDate = new Date();
+const now = new Date();
+const today = now.toISOString().slice(0, 10);
+const hh = `${now.getHours()}`.padStart(2, "0");
+const mm = `${now.getMinutes()}`.padStart(2, "0");
+form.date.value = today;
+form.time.value = `${hh}:${mm}`;
+
 renderAll(getEntries());

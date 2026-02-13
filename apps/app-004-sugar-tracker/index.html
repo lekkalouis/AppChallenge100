@@ -18,31 +18,23 @@
       </header>
 
       <section class="card">
-        <h2>Add daily readings</h2>
+        <h2>Add glucose reading</h2>
         <form id="entry-form" class="form-grid">
-          <label>
-            Date
-            <input type="date" name="date" required />
-          </label>
           <div class="grid-two">
             <label>
-              Fasting (mmol/L)
-              <input type="number" name="fasting" min="2" max="20" step="0.1" placeholder="e.g. 5.4" />
+              Date
+              <input type="date" name="date" required />
             </label>
             <label>
-              Breakfast (mmol/L)
-              <input type="number" name="breakfast" min="2" max="20" step="0.1" placeholder="e.g. 5.8" />
+              Time
+              <input type="time" name="time" required />
             </label>
             <label>
-              Lunch (mmol/L)
-              <input type="number" name="lunch" min="2" max="20" step="0.1" placeholder="e.g. 6.1" />
-            </label>
-            <label>
-              Dinner (mmol/L)
-              <input type="number" name="dinner" min="2" max="20" step="0.1" placeholder="e.g. 6.4" />
+              Level (mmol/L)
+              <input type="number" name="level" min="2" max="20" step="0.1" required placeholder="e.g. 5.8" />
             </label>
           </div>
-          <button type="submit">Save day</button>
+          <button type="submit">Save reading</button>
         </form>
       </section>
 
