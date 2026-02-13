@@ -64,13 +64,28 @@ const normalizeMealType = (value, fallbackTime) => {
   return inferMealType(fallbackTime);
 };
 
-const classifyReading = (value) => {
-  if (value < 4 || value > 9.5) {
+const getTargetRange = (mealType) => {
+  if (mealType === "fasting") {
+    return {
+      min: 3.5,
+      max: 5.5,
+      label: "3.5-5.5 mmol/L",
+    };
+  }
+
+  return {
+    min: 3.5,
+    max: 7,
+    label: "3.5-7.0 mmol/L",
+  };
+};
+
+const classifyReading = (value, mealType) => {
+  const target = getTargetRange(mealType);
+  if (value < target.min || value > target.max) {
     return "highRisk";
   }
-  if (value > 7.8) {
-    return "caution";
-  }
+
   return "inRange";
 };
 
@@ -154,15 +169,15 @@ const average = (values) => {
   return total / values.length;
 };
 
-const getRiskSummary = (values) => {
+const getRiskSummary = (entries) => {
   const summary = {
     inRange: 0,
     caution: 0,
     highRisk: 0,
   };
 
-  values.forEach((value) => {
-    summary[classifyReading(value)] += 1;
+  entries.forEach((entry) => {
+    summary[classifyReading(entry.level, entry.mealType)] += 1;
   });
 
   return summary;
@@ -206,7 +221,7 @@ const overallRisk = (summary) => {
 const renderStats = (entries) => {
   const values = gatherValues(entries);
   const avg = average(values);
-  const risk = getRiskSummary(values);
+  const risk = getRiskSummary(entries);
   const dominantRisk = overallRisk(risk);
   const uniqueDays = new Set(entries.map((entry) => entry.date));
   const mealCounts = getMealCounts(entries);
@@ -251,7 +266,7 @@ const renderStats = (entries) => {
 
 const renderRiskBars = (entries) => {
   const values = gatherValues(entries);
-  const summary = getRiskSummary(values);
+  const summary = getRiskSummary(entries);
   const total = values.length || 1;
   const rows = [
     ["In range", "inRange"],
@@ -340,10 +355,16 @@ const renderEntryList = (entries) => {
   const sorted = [...entries].sort((a, b) => safeDateTime(b) - safeDateTime(a));
   sorted.forEach((entry) => {
     const item = document.createElement("li");
+    const risk = classifyReading(entry.level, entry.mealType);
+    const target = getTargetRange(entry.mealType);
     item.className = "entry-item";
     item.innerHTML = `
       <strong>${entry.date} · ${entry.time}</strong>
       <span>${mealLabel(entry.mealType)} · ${entry.level.toFixed(1)} mmol/L</span>
+      <span class="entry-target">
+        Target ${target.label} ·
+        <span class="badge ${risk === "highRisk" ? "risk" : "good"}">${risk === "highRisk" ? "Out of range" : "In range"}</span>
+      </span>
     `;
     entryList.append(item);
   });

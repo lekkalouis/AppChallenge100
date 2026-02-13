@@ -61,6 +61,7 @@ p {
   margin-top: 0.4rem;
 }
 
+
 .form-grid,
 .grid-two {
   display: grid;
@@ -208,6 +209,16 @@ button.ghost {
   background: #fff9fd;
   display: grid;
   gap: 0.25rem;
+}
+
+
+.entry-target {
+  display: flex;
+  gap: 0.35rem;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 0.84rem;
 }
 
 @media (max-width: 700px) {
