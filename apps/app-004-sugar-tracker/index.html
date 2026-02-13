@@ -12,71 +12,154 @@
         <p class="eyebrow">App #4</p>
         <h1>Sugar Daily Tracker</h1>
         <p class="muted">
-          Track fasting, breakfast, lunch, and dinner glucose readings each day. Data stays in local
-          storage for mobile-friendly offline use.
+          Track glucose with profile-aware standards, comorbidity context, and lifestyle factors. Data
+          stays in local storage.
         </p>
       </header>
 
-      <section class="card">
-        <h2>Add glucose reading</h2>
-        <form id="entry-form" class="form-grid">
-          <div class="grid-two">
-            <label>
-              Date
-              <input type="date" name="date" required />
-            </label>
-            <label>
-              Time
-              <input type="time" name="time" required />
-            </label>
-            <label>
-              Level (mmol/L)
-              <input type="number" name="level" min="2" max="20" step="0.1" required placeholder="e.g. 5.8" />
-            </label>
-            <label>
-              Reading type
-              <select name="mealType">
-                <option value="auto">Auto (by time)</option>
-                <option value="fasting">Fasting</option>
-                <option value="breakfast">Breakfast</option>
-                <option value="lunch">Lunch</option>
-                <option value="dinner">Dinner</option>
-              </select>
-            </label>
+      <nav class="card tab-nav" aria-label="Sugar tracker sections">
+        <button type="button" class="tab-link active" data-tab="capture">Capture</button>
+        <button type="button" class="tab-link" data-tab="dashboard">Dashboard</button>
+        <button type="button" class="tab-link" data-tab="reference">Reference guide</button>
+      </nav>
+
+      <section class="tab-panel active" data-tab-panel="capture">
+        <section class="card">
+          <div class="section-header">
+            <h2>Monitoring mode</h2>
+            <button id="toggle-mode" type="button" class="ghost">Switch to pregnant mode</button>
           </div>
-          <button type="submit">Save reading</button>
-        </form>
+          <p class="muted" id="mode-caption">Using non-pregnant glucose standards.</p>
+          <form id="profile-form" class="form-grid">
+            <div class="grid-two">
+              <label>
+                Pregnancy week
+                <input id="pregnancy-week" type="number" min="4" max="42" step="1" placeholder="Required in pregnant mode" />
+              </label>
+              <label>
+                Hyperthyroidism
+                <select name="hyperthyroidism" required>
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+              <label>
+                Insulin resistance
+                <select name="insulinResistance" required>
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </label>
+            </div>
+            <button type="submit">Save profile</button>
+          </form>
+        </section>
+
+        <section class="card">
+          <h2>Add glucose reading</h2>
+          <form id="entry-form" class="form-grid">
+            <div class="grid-two">
+              <label>
+                Date
+                <input type="date" name="date" required />
+              </label>
+              <label>
+                Time
+                <input type="time" name="time" required />
+              </label>
+              <label>
+                Level (mmol/L)
+                <input type="number" name="level" min="2" max="20" step="0.1" required placeholder="e.g. 5.8" />
+              </label>
+              <label>
+                Reading type
+                <select name="mealType">
+                  <option value="auto">Auto (by time)</option>
+                  <option value="fasting">Fasting</option>
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="dinner">Dinner</option>
+                </select>
+              </label>
+              <label>
+                Carbohydrates around reading (g)
+                <input type="number" name="carbsGrams" min="0" max="250" step="1" required placeholder="e.g. 35" />
+              </label>
+              <label>
+                Activity in prior 2h (minutes)
+                <input type="number" name="activityMinutes" min="0" max="240" step="1" required placeholder="e.g. 20" />
+              </label>
+              <label>
+                Thyroid symptom intensity
+                <select name="thyroidSymptoms" required>
+                  <option value="">Select</option>
+                  <option value="none">None</option>
+                  <option value="mild">Mild</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="severe">Severe</option>
+                </select>
+              </label>
+              <label>
+                Sleep last night (hours)
+                <input type="number" name="sleepHours" min="0" max="16" step="0.5" required placeholder="e.g. 7.5" />
+              </label>
+              <label>
+                Stress level (0-10)
+                <input type="number" name="stressLevel" min="0" max="10" step="1" required placeholder="e.g. 4" />
+              </label>
+              <label>
+                Resting heart rate (bpm)
+                <input type="number" name="heartRate" min="35" max="180" step="1" required placeholder="e.g. 78" />
+              </label>
+            </div>
+            <button type="submit">Save reading</button>
+          </form>
+        </section>
       </section>
 
-      <section class="card">
-        <h2>Overview</h2>
-        <div class="stats" id="stats"></div>
+      <section class="tab-panel" data-tab-panel="dashboard">
+        <section class="card">
+          <h2>Overview</h2>
+          <div class="stats" id="stats"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>7-day average trend</h2>
+            <span class="muted">Line chart</span>
+          </div>
+          <svg id="trend-chart" viewBox="0 0 640 260" role="img" aria-label="Blood sugar trend chart"></svg>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>Risk mix</h2>
+            <span class="muted">Bar graph</span>
+          </div>
+          <div id="risk-bars" class="risk-bars"></div>
+        </section>
+
+        <section class="card">
+          <div class="section-header">
+            <h2>Log entries</h2>
+            <button id="clear-all" type="button" class="ghost">Clear all</button>
+          </div>
+          <ul id="entry-list" class="entry-list"></ul>
+        </section>
       </section>
 
-      <section class="card">
-        <div class="section-header">
-          <h2>7-day average trend</h2>
-          <span class="muted">Line chart</span>
-        </div>
-        <svg id="trend-chart" viewBox="0 0 640 260" role="img" aria-label="Blood sugar trend chart"></svg>
+      <section class="tab-panel" data-tab-panel="reference">
+        <section class="card">
+          <h2>Reference levels guide</h2>
+          <p class="muted">
+            These ranges are display guides for this tracker logic and not a diagnosis. Confirm your
+            personal targets with your clinician.
+          </p>
+          <div id="reference-guide" class="reference-guide"></div>
+        </section>
       </section>
-
-      <section class="card">
-        <div class="section-header">
-          <h2>Risk mix</h2>
-          <span class="muted">Bar graph</span>
-        </div>
-        <div id="risk-bars" class="risk-bars"></div>
-      </section>
-
-      <section class="card">
-        <div class="section-header">
-          <h2>Log entries</h2>
-          <button id="clear-all" type="button" class="ghost">Clear all</button>
-        </div>
-        <ul id="entry-list" class="entry-list"></ul>
-      </section>
-
     </main>
 
     <script src="app.js"></script>
