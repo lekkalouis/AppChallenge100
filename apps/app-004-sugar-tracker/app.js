@@ -291,13 +291,25 @@ const renderRiskBars = (entries) => {
 };
 
 const renderTrendChart = (entries) => {
-  const byDate = [...entries]
+  const dailyBuckets = new Map();
+
+  [...entries]
     .sort((a, b) => safeDateTime(a) - safeDateTime(b))
+    .forEach((entry) => {
+      if (!dailyBuckets.has(entry.date)) {
+        dailyBuckets.set(entry.date, []);
+      }
+      dailyBuckets.get(entry.date).push(entry.level);
+    });
+
+  const byDate = [...dailyBuckets.entries()]
     .slice(-7)
-    .map((entry) => ({
-      label: `${entry.date} ${entry.time}`,
-      value: entry.level,
-    }));
+    .map(([date, levels]) => ({
+      label: date,
+      count: levels.length,
+      value: average(levels),
+    }))
+    .filter((point) => point.value !== null);
 
   if (!byDate.length) {
     trendChart.innerHTML = '<text x="24" y="36" fill="#647089">Add entries to view your trend.</text>';
@@ -330,13 +342,13 @@ const renderTrendChart = (entries) => {
   const circles = byDate
     .map(
       (point, index) =>
-        `<circle cx="${scaleX(index)}" cy="${scaleY(point.value)}" r="4" fill="#8a74f0"><title>${point.label}: ${point.value.toFixed(1)}</title></circle>`,
+        `<circle cx="${scaleX(index)}" cy="${scaleY(point.value)}" r="4" fill="#8a74f0"><title>${point.label}: avg ${point.value.toFixed(1)} mmol/L (${point.count} reading${point.count === 1 ? "" : "s"})</title></circle>`,
     )
     .join("");
 
   const labels = byDate
     .map((point, index) => {
-      const short = point.label.slice(5);
+      const short = point.label;
       return `<text x="${scaleX(index)}" y="246" text-anchor="middle" fill="#647089" font-size="10">${short}</text>`;
     })
     .join("");
