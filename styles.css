@@ -34,6 +34,26 @@ body {
   justify-content: space-between;
 }
 
+
+.install-tip {
+  margin-top: 20px;
+  background: #eef2ff;
+  border: 1px solid rgba(76, 111, 255, 0.2);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+
+.install-tip h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: #2f45a0;
+}
+
+.install-tip p {
+  margin: 0;
+  color: #3f4a61;
+}
+
 .nav {
   display: flex;
   gap: 12px;
