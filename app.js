@@ -62,6 +62,11 @@ const defaultApps = [
     path: "/apps/app-003-focus-compass/index.html",
   },
   {
+    name: "Sugar Daily Tracker (App #4)",
+    description: "Track daily glucose values, averages, charts, and risk levels.",
+    path: "/apps/app-004-sugar-tracker/index.html",
+  },
+  {
     name: "Color Lab",
     description: "Palette generator and contrast checker.",
     path: "/apps/color-lab/index.html",
