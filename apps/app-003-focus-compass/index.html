@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>App #3 · Focus Compass</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">App #3</p>
+        <h1>Focus Compass</h1>
+        <p class="muted">
+          Add what you could work on right now. Focus Compass ranks your list by impact, effort, and your
+          current energy level so you can start quickly.
+        </p>
+      </header>
+
+      <section class="card">
+        <h2>Add task</h2>
+        <form id="task-form" class="form-grid">
+          <label>
+            Task
+            <input type="text" name="title" placeholder="Draft the onboarding email" required />
+          </label>
+          <div class="grid-two">
+            <label>
+              Impact (1-5)
+              <input type="number" name="impact" min="1" max="5" value="3" required />
+            </label>
+            <label>
+              Effort (1-5)
+              <input type="number" name="effort" min="1" max="5" value="3" required />
+            </label>
+          </div>
+          <label>
+            Current energy
+            <select id="energy-level" name="energy" required>
+              <option value="low">Low</option>
+              <option value="medium" selected>Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <button type="submit">Add to compass</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <div class="list-header">
+          <h2>Recommended next step</h2>
+          <button id="clear-all" class="ghost" type="button">Clear all</button>
+        </div>
+        <p id="recommendation" class="recommendation">Add at least one task to get a recommendation.</p>
+        <ul id="task-list" class="task-list"></ul>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>
