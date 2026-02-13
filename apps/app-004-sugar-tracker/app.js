@@ -81,9 +81,39 @@ const safeDate = (input) => {
 
 const safeDateTime = (entry) => safeDate(`${entry.date}T${entry.time || "00:00"}`);
 
+let inMemoryEntries = [];
+
+const generateEntryId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `entry-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const readStoredEntries = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    return JSON.stringify(inMemoryEntries);
+  }
+};
+
+const writeStoredEntries = (entries) => {
+  const serialized = JSON.stringify(entries);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, serialized);
+    inMemoryEntries = entries;
+    return;
+  } catch (error) {
+    inMemoryEntries = entries;
+  }
+};
+
 const getEntries = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStoredEntries();
     if (!raw) {
       return [];
     }
@@ -97,7 +127,7 @@ const getEntries = () => {
         const level = Number(entry.level);
         const time = typeof entry.time === "string" && entry.time ? entry.time : "00:00";
         return {
-          id: typeof entry.id === "string" ? entry.id : crypto.randomUUID(),
+          id: typeof entry.id === "string" ? entry.id : generateEntryId(),
           date: typeof entry.date === "string" ? entry.date : "",
           time,
           level: Number.isFinite(level) ? level : null,
@@ -111,7 +141,7 @@ const getEntries = () => {
 };
 
 const setEntries = (entries) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  writeStoredEntries(entries);
 };
 
 const gatherValues = (entries) => entries.map((entry) => entry.level).filter((value) => typeof value === "number");
@@ -335,7 +365,7 @@ form.addEventListener("submit", (event) => {
   const time = data.get("time");
   const selectedMealType = data.get("mealType");
   const entry = {
-    id: crypto.randomUUID(),
+    id: generateEntryId(),
     date: data.get("date"),
     time,
     level: Number.isFinite(parsedLevel) && rawLevel !== "" ? parsedLevel : null,
