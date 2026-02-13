@@ -61,6 +61,19 @@ p {
   margin-top: 0.4rem;
 }
 
+
+.range-line {
+  margin-top: 0.45rem;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.range-line strong {
+  color: #e23a42;
+  font-size: 1.95rem;
+  letter-spacing: 0.02em;
+}
+
 .form-grid,
 .grid-two {
   display: grid;
