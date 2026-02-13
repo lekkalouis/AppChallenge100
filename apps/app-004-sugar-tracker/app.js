@@ -6,11 +6,62 @@ const entryList = document.getElementById("entry-list");
 const clearAllButton = document.getElementById("clear-all");
 
 const STORAGE_KEY = "app100.sugar-tracker.entries";
+const MEAL_ORDER = ["fasting", "breakfast", "lunch", "dinner"];
 
 const riskColor = {
   inRange: "var(--good)",
   caution: "var(--warn)",
   highRisk: "var(--risk)",
+};
+
+const mealLabel = (mealType) => {
+  if (mealType === "fasting") {
+    return "Fasting";
+  }
+  if (mealType === "breakfast") {
+    return "Breakfast";
+  }
+  if (mealType === "lunch") {
+    return "Lunch";
+  }
+  if (mealType === "dinner") {
+    return "Dinner";
+  }
+  return "Reading";
+};
+
+const inferMealType = (timeValue) => {
+  if (typeof timeValue !== "string") {
+    return "dinner";
+  }
+
+  const [hRaw, mRaw] = timeValue.split(":");
+  const hours = Number(hRaw);
+  const minutes = Number(mRaw);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return "dinner";
+  }
+
+  const totalMinutes = hours * 60 + minutes;
+
+  if (totalMinutes < 7 * 60) {
+    return "fasting";
+  }
+  if (totalMinutes < 11 * 60) {
+    return "breakfast";
+  }
+  if (totalMinutes < 16 * 60) {
+    return "lunch";
+  }
+  return "dinner";
+};
+
+const normalizeMealType = (value, fallbackTime) => {
+  if (MEAL_ORDER.includes(value)) {
+    return value;
+  }
+  return inferMealType(fallbackTime);
 };
 
 const classifyReading = (value) => {
@@ -30,9 +81,39 @@ const safeDate = (input) => {
 
 const safeDateTime = (entry) => safeDate(`${entry.date}T${entry.time || "00:00"}`);
 
+let inMemoryEntries = [];
+
+const generateEntryId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+
+  return `entry-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const readStoredEntries = () => {
+  try {
+    return localStorage.getItem(STORAGE_KEY);
+  } catch (error) {
+    return JSON.stringify(inMemoryEntries);
+  }
+};
+
+const writeStoredEntries = (entries) => {
+  const serialized = JSON.stringify(entries);
+
+  try {
+    localStorage.setItem(STORAGE_KEY, serialized);
+    inMemoryEntries = entries;
+    return;
+  } catch (error) {
+    inMemoryEntries = entries;
+  }
+};
+
 const getEntries = () => {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = readStoredEntries();
     if (!raw) {
       return [];
     }
@@ -44,11 +125,13 @@ const getEntries = () => {
     return parsed
       .map((entry) => {
         const level = Number(entry.level);
+        const time = typeof entry.time === "string" && entry.time ? entry.time : "00:00";
         return {
-          id: typeof entry.id === "string" ? entry.id : crypto.randomUUID(),
+          id: typeof entry.id === "string" ? entry.id : generateEntryId(),
           date: typeof entry.date === "string" ? entry.date : "",
-          time: typeof entry.time === "string" && entry.time ? entry.time : "00:00",
+          time,
           level: Number.isFinite(level) ? level : null,
+          mealType: normalizeMealType(entry.mealType, time),
         };
       })
       .filter((entry) => entry.date && entry.level !== null);
@@ -58,7 +141,7 @@ const getEntries = () => {
 };
 
 const setEntries = (entries) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  writeStoredEntries(entries);
 };
 
 const gatherValues = (entries) => entries.map((entry) => entry.level).filter((value) => typeof value === "number");
@@ -83,6 +166,21 @@ const getRiskSummary = (values) => {
   });
 
   return summary;
+};
+
+const getMealCounts = (entries) => {
+  const counts = {
+    fasting: 0,
+    breakfast: 0,
+    lunch: 0,
+    dinner: 0,
+  };
+
+  entries.forEach((entry) => {
+    counts[entry.mealType] += 1;
+  });
+
+  return counts;
 };
 
 const labelFromRisk = (risk) => {
@@ -111,6 +209,7 @@ const renderStats = (entries) => {
   const risk = getRiskSummary(values);
   const dominantRisk = overallRisk(risk);
   const uniqueDays = new Set(entries.map((entry) => entry.date));
+  const mealCounts = getMealCounts(entries);
 
   const avgText = avg === null ? "--" : avg.toFixed(1);
 
@@ -130,6 +229,22 @@ const renderStats = (entries) => {
     <div class="stat">
       <small>Current risk level</small>
       <span class="badge ${dominantRisk === "highRisk" ? "risk" : dominantRisk === "caution" ? "warn" : "good"}">${labelFromRisk(dominantRisk)}</span>
+    </div>
+    <div class="stat">
+      <small>Fasting count</small>
+      <strong>${mealCounts.fasting}</strong>
+    </div>
+    <div class="stat">
+      <small>Breakfast count</small>
+      <strong>${mealCounts.breakfast}</strong>
+    </div>
+    <div class="stat">
+      <small>Lunch count</small>
+      <strong>${mealCounts.lunch}</strong>
+    </div>
+    <div class="stat">
+      <small>Dinner count</small>
+      <strong>${mealCounts.dinner}</strong>
     </div>
   `;
 };
@@ -228,7 +343,7 @@ const renderEntryList = (entries) => {
     item.className = "entry-item";
     item.innerHTML = `
       <strong>${entry.date} · ${entry.time}</strong>
-      <span>Level: ${entry.level.toFixed(1)} mmol/L</span>
+      <span>${mealLabel(entry.mealType)} · ${entry.level.toFixed(1)} mmol/L</span>
     `;
     entryList.append(item);
   });
@@ -247,11 +362,14 @@ form.addEventListener("submit", (event) => {
 
   const rawLevel = data.get("level");
   const parsedLevel = Number(rawLevel);
+  const time = data.get("time");
+  const selectedMealType = data.get("mealType");
   const entry = {
-    id: crypto.randomUUID(),
+    id: generateEntryId(),
     date: data.get("date"),
-    time: data.get("time"),
+    time,
     level: Number.isFinite(parsedLevel) && rawLevel !== "" ? parsedLevel : null,
+    mealType: selectedMealType === "auto" ? inferMealType(time) : normalizeMealType(selectedMealType, time),
   };
 
   if (!entry.date || !entry.time || entry.level === null) {
@@ -270,6 +388,7 @@ form.addEventListener("submit", (event) => {
   const hh = `${now.getHours()}`.padStart(2, "0");
   const mm = `${now.getMinutes()}`.padStart(2, "0");
   form.time.value = `${hh}:${mm}`;
+  form.mealType.value = "auto";
 });
 
 clearAllButton.addEventListener("click", () => {
@@ -283,5 +402,6 @@ const hh = `${now.getHours()}`.padStart(2, "0");
 const mm = `${now.getMinutes()}`.padStart(2, "0");
 form.date.value = today;
 form.time.value = `${hh}:${mm}`;
+form.mealType.value = "auto";
 
 renderAll(getEntries());
