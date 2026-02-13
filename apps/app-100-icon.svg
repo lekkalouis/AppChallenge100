@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="App 100 icon">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#4c6fff" />
+      <stop offset="100%" stop-color="#7a5cff" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="108" fill="url(#bg)" />
+  <circle cx="256" cy="256" r="170" fill="rgba(255,255,255,0.14)" />
+  <path
+    d="M145 180h46v152h-46zm72 46c0-22 17-39 39-39h62v39h-56v106h-45zm118-39h46v145h-46zm63 0h22c18 0 32 14 32 32v82c0 18-14 31-32 31h-22v-39h11c5 0 8-3 8-8v-50c0-5-3-8-8-8h-11z"
+    fill="#fff"
+  />
+  <text x="50%" y="415" text-anchor="middle" fill="#ffffff" font-size="58" font-family="Inter, Arial, sans-serif" font-weight="700">APP 100</text>
+</svg>
