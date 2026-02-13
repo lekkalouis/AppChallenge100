@@ -284,3 +284,18 @@ button.ghost {
     grid-template-columns: 1fr;
   }
 }
+
+.toast {
+  margin-top: 0.7rem;
+  min-height: 1.2rem;
+  font-size: 0.9rem;
+  color: #2d8d63;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast.visible {
+  opacity: 1;
+  transform: translateY(0);
+}

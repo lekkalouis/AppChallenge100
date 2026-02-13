@@ -10,12 +10,40 @@ const tabPanels = document.querySelectorAll(".tab-panel");
 
 const STORAGE_KEY = "app100.sugar-tracker.entries";
 const MEAL_ORDER = ["fasting", "breakfast", "lunch", "dinner"];
+const AUTO_CAPTURE_DELAY_MS = 2000;
 
 const TARGETS = {
   fasting: { min: 3.9, max: 5.5, label: "3.9-5.5 mmol/L" },
   breakfast: { min: 4.0, max: 7.8, label: "4.0-7.8 mmol/L" },
   lunch: { min: 4.0, max: 7.8, label: "4.0-7.8 mmol/L" },
   dinner: { min: 4.0, max: 7.8, label: "4.0-7.8 mmol/L" },
+};
+
+const inferMealTypeFromTime = (timeValue) => {
+  if (!timeValue || typeof timeValue !== "string") return "dinner";
+
+  const [hoursText = "0", minutesText = "0"] = timeValue.split(":");
+  const hours = Number(hoursText);
+  const minutes = Number(minutesText);
+
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) return "dinner";
+
+  const minutesOfDay = hours * 60 + minutes;
+
+  if (minutesOfDay < 8 * 60 + 30) return "fasting";
+  if (minutesOfDay < 13 * 60) return "breakfast";
+  if (minutesOfDay >= 13 * 60 && minutesOfDay < 17 * 60) return "lunch";
+  return "dinner";
+};
+
+const parseLevelInput = (rawValue) => {
+  if (typeof rawValue !== "string") return null;
+  const trimmed = rawValue.trim().replace(",", ".");
+  if (!/^\d\.\d$/.test(trimmed)) return null;
+
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 2 || parsed > 20) return null;
+  return parsed;
 };
 
 const mealLabel = (mealType) => {
@@ -211,7 +239,7 @@ const renderReferenceGuide = () => {
         <li><strong>Lunch:</strong> 4.0-7.8 mmol/L</li>
         <li><strong>Dinner:</strong> 4.0-7.8 mmol/L</li>
       </ul>
-      <p class="muted">Meal references are applied by your selected reading type.</p>
+      <p class="muted">Meal references are auto-detected from your capture time.</p>
     </article>
   `;
 };
@@ -241,32 +269,75 @@ tabLinks.forEach((tabLink) => {
   });
 });
 
-form.addEventListener("submit", (event) => {
-  event.preventDefault();
+const levelInput = form.elements.level;
+const captureToast = document.getElementById("capture-toast");
 
+let autoCaptureTimer = null;
+
+const showCaptureToast = (message) => {
+  if (!captureToast) return;
+  captureToast.textContent = message;
+  captureToast.classList.add("visible");
+  window.setTimeout(() => {
+    captureToast.classList.remove("visible");
+  }, 1700);
+};
+
+const captureEntryFromForm = () => {
   const data = new FormData(form);
-  const rawLevel = data.get("level");
-  const parsedLevel = Number(rawLevel);
+  const level = parseLevelInput(data.get("level"));
+  const selectedMealType = data.get("mealType");
 
   const entry = {
     id: generateEntryId(),
     date: data.get("date"),
     time: data.get("time"),
-    level: Number.isFinite(parsedLevel) && rawLevel !== "" ? parsedLevel : null,
-    mealType: normalizeMealType(data.get("mealType")),
+    level,
+    mealType: selectedMealType ? normalizeMealType(selectedMealType) : inferMealTypeFromTime(data.get("time")),
   };
 
-  if (!entry.date || !entry.time || entry.level === null || !data.get("mealType")) return;
+  if (!entry.date || !entry.time || entry.level === null) return false;
 
   const entries = getEntries();
   setEntries([...entries, entry]);
   renderAll();
 
   const currentDate = entry.date;
+  const currentTime = entry.time;
   form.reset();
   form.date.value = currentDate;
-  const now = new Date();
-  form.time.value = `${`${now.getHours()}`.padStart(2, "0")}:${`${now.getMinutes()}`.padStart(2, "0")}`;
+  form.time.value = currentTime;
+  form.mealType.value = "";
+  form.level.focus();
+  showCaptureToast(`${entry.level.toFixed(1)} mmol/L captured as ${mealLabel(entry.mealType)}.`);
+  return true;
+};
+
+const scheduleAutoCapture = () => {
+  if (autoCaptureTimer) window.clearTimeout(autoCaptureTimer);
+
+  const parsedLevel = parseLevelInput(levelInput.value);
+  if (parsedLevel === null) return;
+
+  autoCaptureTimer = window.setTimeout(() => {
+    autoCaptureTimer = null;
+    captureEntryFromForm();
+  }, AUTO_CAPTURE_DELAY_MS);
+};
+
+form.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (autoCaptureTimer) {
+    window.clearTimeout(autoCaptureTimer);
+    autoCaptureTimer = null;
+  }
+  captureEntryFromForm();
+});
+
+levelInput.addEventListener("input", () => {
+  const normalized = levelInput.value.replace(/,/g, ".").replace(/[^\d.]/g, "").slice(0, 3);
+  levelInput.value = normalized;
+  scheduleAutoCapture();
 });
 
 clearAllButton.addEventListener("click", () => {
@@ -277,5 +348,6 @@ clearAllButton.addEventListener("click", () => {
 const now = new Date();
 form.date.value = now.toISOString().slice(0, 10);
 form.time.value = `${`${now.getHours()}`.padStart(2, "0")}:${`${now.getMinutes()}`.padStart(2, "0")}`;
+form.level.focus();
 
 renderAll();
