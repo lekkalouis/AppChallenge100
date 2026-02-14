@@ -4,6 +4,7 @@ const trendChart = document.getElementById("trend-chart");
 const riskBars = document.getElementById("risk-bars");
 const entryList = document.getElementById("entry-list");
 const clearAllButton = document.getElementById("clear-all");
+const downloadExcelButton = document.getElementById("download-excel");
 const referenceGuide = document.getElementById("reference-guide");
 const tabLinks = document.querySelectorAll(".tab-link");
 const tabPanels = document.querySelectorAll(".tab-panel");
@@ -283,6 +284,62 @@ const showCaptureToast = (message) => {
   }, 1700);
 };
 
+const formatDateForExcel = (value) => {
+  if (!value) return "";
+  const [year = "", month = "", day = ""] = value.split("-");
+  if (!year || !month || !day) return value;
+  return `${day}/${month}/${year}`;
+};
+
+const escapeForCsv = (value) => {
+  const textValue = String(value ?? "");
+  const escaped = textValue.replaceAll('"', '""');
+  return /[",\n]/.test(escaped) ? `"${escaped}"` : escaped;
+};
+
+const buildExcelCompatibleCsv = (entries) => {
+  const headers = ["Date", "Time", "Reading type", "Level (mmol/L)", "Target range", "Risk"];
+  const rows = entries
+    .slice()
+    .sort((a, b) => safeDateTime(a) - safeDateTime(b))
+    .map((entry) => {
+      const target = targetForMeal(entry.mealType);
+      const risk = labelFromRisk(classifyReading(entry));
+      return [
+        formatDateForExcel(entry.date),
+        entry.time,
+        mealLabel(entry.mealType),
+        entry.level.toFixed(1),
+        target.label,
+        risk,
+      ];
+    });
+
+  return [headers, ...rows].map((row) => row.map(escapeForCsv).join(",")).join("\r\n");
+};
+
+const downloadEntriesAsExcel = () => {
+  const entries = getEntries();
+  if (!entries.length) {
+    showCaptureToast("No entries available to download.");
+    return;
+  }
+
+  const csv = buildExcelCompatibleCsv(entries);
+  const blob = new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const today = new Date().toISOString().slice(0, 10);
+  link.href = url;
+  link.download = `sugar-tracker-${today}.csv`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+
+  showCaptureToast("Excel-ready file downloaded.");
+};
+
 const captureEntryFromForm = () => {
   const data = new FormData(form);
   const level = parseLevelInput(data.get("level"));
@@ -344,6 +401,10 @@ clearAllButton.addEventListener("click", () => {
   setEntries([]);
   renderAll();
 });
+
+if (downloadExcelButton) {
+  downloadExcelButton.addEventListener("click", downloadEntriesAsExcel);
+}
 
 const now = new Date();
 form.date.value = now.toISOString().slice(0, 10);
